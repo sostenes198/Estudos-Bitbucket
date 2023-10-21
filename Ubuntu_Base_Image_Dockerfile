@@ -1,0 +1,87 @@
+# Use a imagem base do Ubuntu
+FROM ubuntu:20.04
+
+# Instale as dependências necessárias
+RUN apt-get update && \
+    apt-get install -y apt-transport-https ca-certificates curl software-properties-common
+
+# Adicione a chave GPG oficial do Docker
+RUN curl -fsSL https://download.docker.com/linux/ubuntu/gpg | apt-key add -
+
+# Adicione o repositório oficial do Docker
+RUN add-apt-repository "deb [arch=amd64] https://download.docker.com/linux/ubuntu $(lsb_release -cs) stable"
+
+# Instale o Docker
+RUN apt-get update && \
+    apt-get install -y docker-ce docker-ce-cli containerd.io
+
+# Instale o Docker Compose
+RUN curl -L "https://github.com/docker/compose/releases/download/1.29.2/docker-compose-$(uname -s)-$(uname -m)" -o /usr/local/bin/docker-compose && \
+    chmod +x /usr/local/bin/docker-compose
+
+# Inicie o Docker Daemon durante a construção do contêiner
+RUN service docker start    
+
+# Exponha o socket do Docker para que o contêiner possa interagir com o Docker no host
+VOLUME /var/run/docker.sock
+
+# # Adiciona o usuário "docker" ao grupo "docker"
+RUN usermod -aG docker root
+
+######################## Instalação NVM  NODE
+ENV NODE_VERSION=18.18.0
+RUN apt-get update
+RUN apt install -y curl
+RUN curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.39.5/install.sh | bash
+ENV NVM_DIR=/root/.nvm
+RUN . "$NVM_DIR/nvm.sh" && nvm install ${NODE_VERSION}
+RUN . "$NVM_DIR/nvm.sh" && nvm use v${NODE_VERSION}
+RUN . "$NVM_DIR/nvm.sh" && nvm alias default v${NODE_VERSION}
+ENV PATH="/root/.nvm/versions/node/v${NODE_VERSION}/bin/:${PATH}"
+
+
+######################## Instalação NPM
+RUN corepack enable && corepack prepare pnpm@latest-8 --activate
+
+# Configuração padrão para o diretório de trabalho
+WORKDIR /app
+
+# Seu conteúdo adicional do Dockerfile pode seguir aqui...
+
+# Comando padrão ao iniciar o contêiner
+CMD ["bash"]
+
+############### DOCKER DIN EXEMPLO
+# Use a imagem base do Ubuntu
+# FROM ubuntu:20.04
+
+# # Instale as dependências necessárias
+# RUN apt-get update && \
+#     apt-get install -y apt-transport-https ca-certificates curl software-properties-common
+
+# # Adicione a chave GPG oficial do Docker
+# RUN curl -fsSL https://download.docker.com/linux/ubuntu/gpg | apt-key add -
+
+# # Adicione o repositório oficial do Docker
+# RUN add-apt-repository "deb [arch=amd64] https://download.docker.com/linux/ubuntu $(lsb_release -cs) stable"
+
+# # Instale o Docker
+# RUN apt-get update && \
+#     apt-get install -y docker-ce docker-ce-cli containerd.io
+
+# # Configuração padrão para o diretório de trabalho
+# WORKDIR /app
+
+# # Baixe e instale o Docker Compose
+# RUN curl -L "https://github.com/docker/compose/releases/download/1.29.2/docker-compose-$(uname -s)-$(uname -m)" -o /usr/local/bin/docker-compose && \
+#     chmod +x /usr/local/bin/docker-compose
+
+# # Baixe e instale o DinD (Docker-in-Docker)
+# RUN curl -sSL https://get.docker.com/builds/Linux/x86_64/docker-17.05.0-ce.tgz | tar -xvzf - -C / && \
+#     mv /docker/* /usr/bin/
+
+# # Configure o usuário "docker" para não precisar de "sudo"
+# RUN usermod -aG docker root
+
+# # Exponha o socket do Docker para que o contêiner possa interagir com o Docker no host
+# VOLUME /var/run/docker.sock
